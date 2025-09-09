@@ -1,0 +1,95 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake make emscripten
+        sudo sysctl fs.inotify.max_user_watches=524288
+
+    - name: Install Node dependencies
+      run: |
+        export LIBRE_BUILD=true
+        npm install --build-from-source
+
+    - name: Clone matrix-olm
+      run: |
+        git clone https://gitlab.matrix.org/matrix-org/olm.git matrix-olm
+        cd matrix-olm
+        git checkout 3.2.3
+
+    - name: Prepare Android build
+      run: |
+        cd android/app
+        # Remove Google services and Firebase dependencies
+        sed -i -e '/if (googleServicesEnabled) {/,+2d' -e '/firebase/d' -e '/gms/d' ../build.gradle build.gradle
+        sed -i -e '/targetSdkVersion/auseExoplayerIMA = false' -e '/targetSdkVersion/aRNVUseExoplayerIMA = false' ../build.gradle
+        sed -i -e 's/libreBuild =.*$/libreBuild = true/g' ../build.gradle
+        sed -i -e '/play-services-auth/d' build.gradle
+
+        # Remove Google Play Services from dependencies
+        sed -i -e '/play-services/d' ../../node_modules/react-native-device-info/android/build.gradle || true
+        sed -i -e '/installReferrerVersion/,+11d' ../../node_modules/react-native-device-info/android/build.gradle || true
+        sed -E -i 's/^.*google.*play.*services.*$//g' ../../node_modules/@react-native-google-signin/google-signin/android/build.gradle || true
+        sed -i -e '/extension-ima/d' ../../node_modules/react-native-video/android/build.gradle || true
+        sed -i -e '/amplitude/d' -e '/giphy/d' -e '/google-signin/d' ../settings.gradle || true
+
+    - name: Build matrix-olm
+      run: |
+        cd matrix-olm
+        sed -i -e 's/Wno-error=closure//' -e 's/--closure 1//' Makefile
+        make -j$(nproc) js
+        cp -f javascript/olm.wasm ../node_modules/@matrix-org/olm/
+
+    - name: Build Debug APK
+      run: |
+        cd android
+        export LIBRE_BUILD=true
+        ./gradlew assembleDebug
+
+    - name: Build Release APK
+      run: |
+        cd android
+        export LIBRE_BUILD=true
+        ./gradlew assembleRelease
+
+    - name: Upload Debug APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: jitsi-meet-debug
+        path: android/app/build/outputs/apk/debug/app-debug.apk
+
+    - name: Upload Release APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: jitsi-meet-release
+        path: android/app/build/outputs/apk/release/app-release.apk
