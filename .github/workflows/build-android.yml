@@ -10,6 +10,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build_type: [debug, release]
 
     steps:
     - name: Checkout repository
@@ -72,30 +75,19 @@ jobs:
         make -j$(nproc) js
         cp -f javascript/olm.wasm ../node_modules/@matrix-org/olm/
 
-    - name: Build Debug APK
+    - name: Build APK
       run: |
         cd android
         export LIBRE_BUILD=true
         export JITSI_SERVER_URL="${{ secrets.JITSI_SERVER_URL }}"
         export JITSI_PRESET_ROOMS_URLS="${{ vars.JITSI_PRESET_ROOMS_URLS }}"
-        ./gradlew assembleDebug
+        ./gradlew assemble${{ matrix.build_type == 'debug' && 'Debug' || 'Release' }}
+        ls -la app/build/outputs/apk/${{ matrix.build_type }}/ || echo "${{ matrix.build_type }} APK not found"
 
-    - name: Build Release APK
-      run: |
-        cd android
-        export LIBRE_BUILD=true
-        export JITSI_SERVER_URL="${{ secrets.JITSI_SERVER_URL }}"
-        export JITSI_PRESET_ROOMS_URLS="${{ vars.JITSI_PRESET_ROOMS_URLS }}"
-        ./gradlew assembleRelease
-
-    - name: Upload Debug APK
+    - name: Upload APK
       uses: actions/upload-artifact@v4
+      if: hashFiles('android/app/build/outputs/apk/${{ matrix.build_type }}/*.apk') != ''
       with:
-        name: jitsi-meet-debug
-        path: android/app/build/outputs/apk/debug/app-debug.apk
+        name: jitsi-meet-${{ matrix.build_type }}
+        path: android/app/build/outputs/apk/${{ matrix.build_type }}/*.apk
 
-    - name: Upload Release APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: jitsi-meet-release
-        path: android/app/build/outputs/apk/release/app-release.apk
