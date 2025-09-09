@@ -88,6 +88,26 @@ jobs:
         export JITSI_PRESET_ROOMS_URLS="${{ vars.JITSI_PRESET_ROOMS_URLS }}"
         ./gradlew assemble${{ matrix.build_type == 'debug' && 'Debug' || 'Release' }}
         ls -la app/build/outputs/apk/${{ matrix.build_type }}/ || echo "${{ matrix.build_type }} APK not found"
+        
+    - name: Sign APK
+      run: |
+        mkdir -p ~/.android
+        if [ "${{ matrix.build_type }}" == "debug" ]; then
+          # Create debug keystore if it doesn't exist
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+          cd android
+          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore ~/.android/debug.keystore -storepass android -keypass android app/build/outputs/apk/debug/app-debug.apk androiddebugkey || true
+        else
+          # Create release keystore
+          if [ ! -f ~/.android/release.keystore ]; then
+            keytool -genkey -v -keystore ~/.android/release.keystore -storepass android -alias androidreleasekey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Release,O=Android,C=US"
+          fi
+          cd android
+          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore ~/.android/release.keystore -storepass android -keypass android app/build/outputs/apk/release/app-release-unsigned.apk androidreleasekey || true
+          mv app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/app-release.apk || true
+        fi
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
