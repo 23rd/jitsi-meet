@@ -220,6 +220,8 @@
     "tsc-test:web": "tsc --project tsconfig.web.json --listFilesOnly | grep -v node_modules | grep native",
     "tsc-test:native": "tsc --project tsconfig.native.json --listFilesOnly | grep -v node_modules | grep web",
     "start": "make dev",
+    "build:custom-server": "echo 'Usage: JITSI_SERVER_URL=https://your-server.com npm run build:custom-server' && make compile",
+    "build:server": "./build-with-server.sh",
     "test": "DOTENV_CONFIG_PATH=tests/.env wdio run tests/wdio.conf.ts",
     "test-single": "DOTENV_CONFIG_PATH=tests/.env wdio run tests/wdio.conf.ts --spec",
     "test-ff-single": "DOTENV_CONFIG_PATH=tests/.env wdio run tests/wdio.firefox.conf.ts --spec",

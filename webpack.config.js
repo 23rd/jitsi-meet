@@ -297,7 +297,8 @@ module.exports = (_env, argv) => {
                 ...config.plugins,
                 ...getBundleAnalyzerPlugin(analyzeBundle, 'app'),
                 new webpack.DefinePlugin({
-                    '__DEV__': !isProduction
+                    '__DEV__': !isProduction,
+                    'process.env.JITSI_SERVER_URL': JSON.stringify(process.env.JITSI_SERVER_URL)
                 }),
                 new webpack.IgnorePlugin({
                     resourceRegExp: /^canvas$/,

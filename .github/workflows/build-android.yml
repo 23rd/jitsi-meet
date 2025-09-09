@@ -39,6 +39,7 @@ jobs:
     - name: Install Node dependencies
       run: |
         export LIBRE_BUILD=true
+        export JITSI_SERVER_URL="${{ secrets.JITSI_SERVER_URL }}"
         npm install --build-from-source
 
     - name: Clone matrix-olm
@@ -74,12 +75,14 @@ jobs:
       run: |
         cd android
         export LIBRE_BUILD=true
+        export JITSI_SERVER_URL="${{ secrets.JITSI_SERVER_URL }}"
         ./gradlew assembleDebug
 
     - name: Build Release APK
       run: |
         cd android
         export LIBRE_BUILD=true
+        export JITSI_SERVER_URL="${{ secrets.JITSI_SERVER_URL }}"
         ./gradlew assembleRelease
 
     - name: Upload Debug APK
