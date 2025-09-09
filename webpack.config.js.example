@@ -1,0 +1,25 @@
+// Example webpack configuration for preset rooms
+const webpack = require('webpack');
+const fs = require('fs');
+const path = require('path');
+
+// Load preset rooms from file or environment
+let presetRooms = '[]';
+try {
+  if (process.env.JITSI_PRESET_ROOMS_FILE) {
+    presetRooms = fs.readFileSync(process.env.JITSI_PRESET_ROOMS_FILE, 'utf8');
+  } else if (process.env.JITSI_PRESET_ROOMS) {
+    presetRooms = process.env.JITSI_PRESET_ROOMS;
+  }
+} catch (error) {
+  console.warn('Could not load preset rooms:', error.message);
+}
+
+module.exports = {
+  // ... other webpack config
+  plugins: [
+    new webpack.DefinePlugin({
+      'process.env.JITSI_PRESET_ROOMS': JSON.stringify(presetRooms)
+    })
+  ]
+};

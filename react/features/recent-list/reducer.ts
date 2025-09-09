@@ -8,6 +8,7 @@ import {
     _UPDATE_CONFERENCE_DURATION
 } from './actionTypes';
 import { isRecentListEnabled } from './functions';
+import { mergeWithPresetRooms } from './presetRooms';
 
 interface IRecent {
     conference: string;
@@ -39,7 +40,7 @@ const STORE_NAME = 'features/recent-list';
 /**
  * Sets up the persistence of the feature {@code recent-list}.
  */
-PersistenceRegistry.register(STORE_NAME);
+PersistenceRegistry.register(STORE_NAME, true, mergeWithPresetRooms(DEFAULT_STATE));
 
 /**
  * Reduces redux actions for the purposes of the feature {@code recent-list}.

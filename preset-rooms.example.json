@@ -1,0 +1,12 @@
+[
+  {
+    "conference": "https://meet.jit.si/DailyStandup",
+    "date": 1640995200000,
+    "duration": 1800000
+  },
+  {
+    "conference": "https://meet.jit.si/TeamMeeting",
+    "date": 1640908800000,
+    "duration": 3600000
+  }
+]
